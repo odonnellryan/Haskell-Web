@@ -1,0 +1,33 @@
+requirements:
+
+1) Haskell: http://www.haskell.org/platform/windows.html
+2) This stuff:
+    cabal install cabal-install
+    cabal update
+    cabal install aeson
+    cabal install haskell-src-exts
+    cabal install ghc-mod
+    cabal install cmdargs
+    canal install haddock
+    cabal install network-bytestring
+
+If you want to use Sublime 3 with this project (what I'm doing) you'll have to do this: 
+
+1) Install `SublimeHaskell` plugin for Sublime3
+
+2) Install hdevtools:
+	Download source: https://github.com/mvoidex/hdevtools
+	runhaskell Setup.hs configure --user
+	runhaskell Setup.hs build
+	runhaskell Setup.hs install
+
+3) Find the path to the binary (third step) and replace in the below:
+	{
+	    "add_to_PATH":
+	    [
+	        "C:/Users/Aleksey Bykov/AppData/Roaming/cabal/bin/"
+	    ],
+	    "enable_hdevtools": true
+	}
+
+CTRL + B builds the Haskell projects (.hs files)
