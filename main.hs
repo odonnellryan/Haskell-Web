@@ -27,7 +27,10 @@ handleConn connection host port = do
 
 msg :: HostName -> PortNumber -> String
 --msg = "HTTP/1.0 200 OK\r\nContent-Length: 5\r\n\r\n" ++ "\r\n"
-msg host port = "HTTP/1.0 200 OK\r\nContent-Length: " ++ show (length(formatPortAndHost host port)) ++ "\r\n\r\n" ++ formatPortAndHost host port ++ "\r\n"
+msg host port = "HTTP/1.0 200 OK\r\nContent-Length: " ++ msgLength ++ "\r\n\r\n" ++ formattedMsg ++ "\r\n"
+	where 
+		formattedMsg = show (formatPortAndHost host port)
+		msgLength = show(length formattedMsg)
 
 formatPortAndHost :: HostName -> PortNumber -> String
 formatPortAndHost host port = "Host: " ++ show host ++ " Port: " ++ show port
