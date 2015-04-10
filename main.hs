@@ -28,7 +28,6 @@ loop sock = do
 takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
 takeUntilCondition predicate line = do
 	-- basically, checks if the line accepted against the predicate.
-	-- continues if false
 	x <- head line
 	if predicate x
     	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
@@ -43,6 +42,7 @@ handleConn handle = do
 	-- feed until we get the first line that is a carriage return
 	l2 <- takeUntilCondition (/= "\r") l
 	print l2
+	--print l
 	-- split the request into a list of params. first is going to be the METHOD.
 	let request = words (head l2)
 	print (tail l2)
