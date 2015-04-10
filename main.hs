@@ -3,6 +3,7 @@
 import Network
 import System.IO
 
+
 -- defining our custom types. We derive from Show so that 
 -- we can use show on these types later!
 data ReturnCode = ReturnCode Int String deriving (Show)
@@ -25,25 +26,30 @@ loop sock = do
 handleConn :: Handle -> IO ()
 handleConn handle = do
 	-- we get the request from the client
+	-- this probably should be using bytestrings but whatever
 	line <- hGetLine handle
+	hSetBuffering handle NoBuffering
+	print line
 	-- split the request into a list of params. first is going to be the METHOD.
-	-- this probably works because most(?) times the params sent fromt he client are
-	-- space delimited. i think.
-	let method = words line
-	case head method of
+	let request = words line
+	case head request of
 		-- not sure if this is best, but I guess we'll see!
 		("GET") -> hPutStr handle (handleGet line)
 		("POST") -> hPutStr handle (handlePost line)
 		("PUT") -> hPutStr handle (handlePut line)
 		("DELETE") -> hPutStr handle (handleDelete line)
-		("TRACE") -> hPutStr handle (handleTrace line)
-		("CONNECT") -> hPutStr handle (handleConnect line)
-		_ -> hPutStr handle (handleError line)
-	hFlush  handle
-	hClose  handle
+		("HEAD") -> hPutStr handle (handleHead line)
+		-- handle default case
+		_ -> hPutStr handle (handleError "" (ReturnCode 443 "Invalid method."))
+	hFlush handle
+	hClose handle
+
+
+
+-- begin handlers
 
 handleGet :: String -> String
-handleGet line = addHeader returnCode body
+handleGet line = addStatus returnCode body
 	where
 		body = serveFile line
 		returnCode = ReturnCode 200 "OK"
@@ -57,26 +63,23 @@ handlePut line = "test: " ++ line
 handleDelete :: String -> String
 handleDelete line = "test: " ++ line
 
-handleTrace :: String -> String
-handleTrace line = "test: " ++ line
+handleHead :: String -> String
+handleHead line = "test: " ++ line
 
-handleConnect :: String -> String
-handleConnect line = "test: " ++ line
+handleError :: String -> ReturnCode -> String
+handleError body code = addStatus code body
 
-handleError :: String -> String
-handleError line = addHeader returnCode body
-	where
-		body = serveFile line
-		returnCode = ReturnCode 200 "OK"
+--
+
 
 
 serveFile :: String -> String
-serveFile line = line ++ line
+serveFile line = line
 
-httpHeaders :: Int -> String -> Int -> [String]
-httpHeaders code status msgLength = ["HTTP/1.0", show code, status, "\r\nContent-Length:", show msgLength, "\r\n\r\n"]
+statusLine :: Int -> String -> Int -> [String]
+statusLine code status msgLength = ["HTTP/1.0", show code, status, "\r\nContent-Length:", show msgLength, "\r\n\r\n"]
 
-addHeader :: ReturnCode -> String -> String
-addHeader (ReturnCode code status) body = unwords (httpHeaders code status bLen) ++ body ++ "\r\n"
+addStatus :: ReturnCode -> String -> String
+addStatus (ReturnCode code status) body = unwords (statusLine code status bLen) ++ body ++ "\r\n"
 	where
 		bLen = length body
