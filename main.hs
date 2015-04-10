@@ -4,6 +4,7 @@ import Network
 import System.IO
 
 
+
 -- defining our custom types. We derive from Show so that 
 -- we can use show on these types later!
 data ReturnCode = ReturnCode Int String deriving (Show)
@@ -23,15 +24,29 @@ loop sock = do
 	handleConn handle
 	loop sock
 
+-- takes io until the predicate is met, something something monad
+takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
+takeUntilCondition predicate line = do
+	-- basically, checks if the line accepted against the predicate.
+	-- continues if false
+	x <- head line
+	if predicate x
+    	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
+    	else return []
+
 handleConn :: Handle -> IO ()
 handleConn handle = do
 	-- we get the request from the client
 	-- this probably should be using bytestrings but whatever
-	line <- hGetLine handle
-	hSetBuffering handle NoBuffering
-	print line
+	-- update: definitely use bytestrings, otherwise we've crossed the hacky line
+	let l = repeat (hGetLine handle)
+	-- feed until we get the first line that is a carriage return
+	l2 <- takeUntilCondition (/= "\r") l
+	print l2
 	-- split the request into a list of params. first is going to be the METHOD.
-	let request = words line
+	let request = words (head l2)
+	print (tail l2)
+	let line = head l2
 	case head request of
 		-- not sure if this is best, but I guess we'll see!
 		("GET") -> hPutStr handle (handleGet line)
