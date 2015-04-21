@@ -1,37 +1,30 @@
 --{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
- -- Echo server program
-module Main where
-import Control.Monad (unless)
-import Network.Socket hiding (recv)
-import qualified Data.ByteString as S
-import Network.Socket.ByteString
+
+import Network
+import System.IO
+
+
+
+-- defining our custom types. We derive from Show so that 
+-- we can use show on these types later!
+data ReturnCode = ReturnCode Int String deriving (Show)
+
+-- beginning of web server. just listens on that port and serves a basic page
 
 main :: IO ()
-main = withSocketsDo $ do 
-	addrinfos <- getAddrInfo (Just (defaultHints {addrFlags = [AI_PASSIVE]})) Nothing (Just "8080")
-	let serveraddr = head addrinfos
-	sock <- socket (addrFamily serveraddr) Stream defaultProtocol
-	bindSocket sock (addrAddress serveraddr)
-	listen sock 1
+main = do
+	-- create the socket
+	sock <- listenOn (PortNumber 8080)
 	loop sock
-	sClose sock
 
 loop :: Socket -> IO ()
 loop sock = do
-	(conn, _) <- accept sock
-	talk conn
-	sClose conn
+	-- accept the handle from the socket
+	(handle, _, _) <- accept sock
+	handleConn handle
 	loop sock
 
-talk :: Socket -> IO ()
-talk conn = do 
-	let l = repeat (recv conn 1024)
-	-- feed until we get the first line that is a carriage return
-	l2 <- takeUntilCondition (/= "\r") l
-	print l2
-	--m <- testing msg conn
-
---build :: IO S.ByteString -> Socket -> IO S.ByteString
+-- takes io until the predicate is met, something something monad
 takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
 takeUntilCondition predicate line = do
 	-- basically, checks if the line accepted against the predicate.
@@ -41,10 +34,6 @@ takeUntilCondition predicate line = do
     	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
     	else return []
 
-<<<<<<< HEAD
---serveFile :: String -> String
---serveFile line = line
-=======
 handleConn :: Handle -> IO ()
 handleConn handle = do
 	-- we get the request from the client
@@ -95,12 +84,17 @@ handleHead line = "test: " ++ line
 handleError :: String -> ReturnCode -> String
 handleError body code = addStatus code body
 
->>>>>>> parent of 342dabc... Oops
 --
---statusLine :: Int -> String -> Int -> [String]
---statusLine code status msgLength = ["HTTP/1.0", show code, status, "\r\nContent-Length:", show msgLength, "\r\n\r\n"]
---
---addStatus :: ReturnCode -> String -> String
---addStatus (ReturnCode code status) body = unwords (statusLine code status bLen) ++ body ++ "\r\n"
---	where
---		bLen = length body
+
+
+
+serveFile :: String -> String
+serveFile line = line
+
+statusLine :: Int -> String -> Int -> [String]
+statusLine code status msgLength = ["HTTP/1.0", show code, status, "\r\nContent-Length:", show msgLength, "\r\n\r\n"]
+
+addStatus :: ReturnCode -> String -> String
+addStatus (ReturnCode code status) body = unwords (statusLine code status bLen) ++ body ++ "\r\n"
+	where
+		bLen = length body
