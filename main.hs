@@ -24,11 +24,8 @@ loop sock = do
 	handleConn handle
 	loop sock
 
--- takes io until the predicate is met, something something monad
 takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
 takeUntilCondition predicate line = do
-	-- basically, checks if the line accepted against the predicate.
-	-- continues if false
 	x <- head line
 	if predicate x
     	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
@@ -37,11 +34,9 @@ takeUntilCondition predicate line = do
 handleConn :: Handle -> IO ()
 handleConn handle = do
 	request <- takeUntilCondition (/= "\r") (repeat (hGetLine handle))
-	-- split the request into a list of params. first is going to be the METHOD.
-	let r = words (head request)
+	let method = head (words (head request))
 	let line = unwords request
-	case head r of
-		-- not sure if this is best, but I guess we'll see!
+	case method of
 		("GET") -> hPutStr handle (handleGet line)
 		("POST") -> hPutStr handle (handlePost line)
 		("PUT") -> hPutStr handle (handlePut line)
@@ -51,10 +46,6 @@ handleConn handle = do
 		_ -> hPutStr handle (handleError "" (ReturnCode 443 "Invalid method."))
 	hFlush handle
 	hClose handle
-
-
-
--- begin handlers
 
 handleGet :: String -> String
 handleGet line = addStatus returnCode body
@@ -76,10 +67,6 @@ handleHead line = "test: " ++ line
 
 handleError :: String -> ReturnCode -> String
 handleError body code = addStatus code body
-
---
-
-
 
 serveFile :: String -> String
 serveFile line = line
