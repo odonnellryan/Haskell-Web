@@ -36,18 +36,11 @@ takeUntilCondition predicate line = do
 
 handleConn :: Handle -> IO ()
 handleConn handle = do
-	-- we get the request from the client
-	-- this probably should be using bytestrings but whatever
-	-- update: definitely use bytestrings, otherwise we've crossed the hacky line
-	let l = repeat (hGetLine handle)
-	-- feed until we get the first line that is a carriage return
-	l2 <- takeUntilCondition (/= "\r") l
-	print l2
+	request <- takeUntilCondition (/= "\r") (repeat (hGetLine handle))
 	-- split the request into a list of params. first is going to be the METHOD.
-	let request = words (head l2)
-	print (tail l2)
-	let line = head l2
-	case head request of
+	let r = words (head request)
+	let line = unwords request
+	case head r of
 		-- not sure if this is best, but I guess we'll see!
 		("GET") -> hPutStr handle (handleGet line)
 		("POST") -> hPutStr handle (handlePost line)
