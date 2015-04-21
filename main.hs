@@ -25,21 +25,21 @@ loop sock = do
 
 talk :: Socket -> IO ()
 talk conn = do 
-	msg <- recv conn 1024
-	print msg
-	unless (S.null msg) $ do
-		m <- build msg conn
-		print m
-		sendAll conn m
+	let l = repeat (recv conn 1024)
+	-- feed until we get the first line that is a carriage return
+	l2 <- takeUntilCondition (/= "\r") l
+	print l2
 	--m <- testing msg conn
 
 --build :: IO S.ByteString -> Socket -> IO S.ByteString
-build :: S.ByteString -> Socket -> IO S.ByteString
-build msg conn = do
-    m <- recv conn 1024
-    print m
-    if S.null m then return msg
-    else build (S.append msg m) conn
+takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
+takeUntilCondition predicate line = do
+	-- basically, checks if the line accepted against the predicate.
+	-- continues if false
+	x <- head line
+	if predicate x
+    	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
+    	else return []
 
 --serveFile :: String -> String
 --serveFile line = line
