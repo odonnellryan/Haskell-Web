@@ -2,12 +2,15 @@
 
 import Network
 import System.IO
-
-
+import Data.List
+--import Data.String
 
 -- defining our custom types. We derive from Show so that 
 -- we can use show on these types later!
 data ReturnCode = ReturnCode Int String deriving (Show)
+data ContentLength = ContentLength (Maybe Int) deriving (Show)
+data Request = Request ContentLength deriving (Show)
+
 
 -- beginning of web server. just listens on that port and serves a basic page
 
@@ -26,13 +29,22 @@ loop sock = do
 
 takeUntilCondition :: (a -> Bool) -> [IO a] -> IO [a]
 takeUntilCondition predicate line = do
+	-- gets a list of strings
+	-- searches the list for the first one that matches a pedicate
+	-- in our case, this is the first blank line, ergo the end of the header
 	x <- head line
 	if predicate x
-    	then takeUntilCondition predicate (tail line) >>= \xs -> return (x:xs)
+    	then do 
+    		xs <- takeUntilCondition predicate (tail line) 
+    		return (x:xs)
     	else return []
+
 
 handleConn :: Handle -> IO ()
 handleConn handle = do
+	-- this gets from the handle until the predicate is met
+	-- predicate here is the first blank like
+	-- according to http spec this is the beginning of the body/end of header
 	request <- takeUntilCondition (/= "\r") (repeat (hGetLine handle))
 	let method = head (words (head request))
 	let line = unwords request
@@ -46,6 +58,13 @@ handleConn handle = do
 		_ -> hPutStr handle (handleError "" (ReturnCode 443 "Invalid method."))
 	hFlush handle
 	hClose handle
+
+parseHeaders :: [String] -> Request
+parseHeaders request = do
+	w <- find (isInfixOf "Content-Length") request
+	return (Request (ContentLength (Just 123)))
+
+
 
 handleGet :: String -> String
 handleGet line = addStatus returnCode body
