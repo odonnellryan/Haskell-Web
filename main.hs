@@ -3,6 +3,7 @@
 import Network
 import System.IO
 import Data.List
+import Data.Maybe
 --import Data.String.Utils
 
 -- defining our custom types. We derive from Show so that 
@@ -48,6 +49,10 @@ handleConn handle = do
 	request <- takeUntilCondition (/= "\r") (repeat (hGetLine handle))
 	let method = head (words (head request))
 	let line = unwords request
+	let testListString = ["Content-Length: 100\r"]
+	let s = findContentLength testListString
+	let st = parseContentLength s
+	print st
 	case method of
 		("GET") -> hPutStr handle (handleGet line)
 		("POST") -> hPutStr handle (handlePost line)
@@ -59,26 +64,35 @@ handleConn handle = do
 	hFlush handle
 	hClose handle
 
---parseHeaders :: [String] -> Request
-parseHeaders request = find (isInfixOf "Content-Length") request
-	--getContentLength cs
-
-setCL :: Request
-setCL =
-	Request (ContentLength (Just 110))
-
---getContentLength :: String -> ContentLength
-getContentLength s = 
-	let 
-		repl "\\" = ""
-		repl "r" = ""
-		repl c = c
-	in map repl t
+findContentLength :: [String] -> Maybe String
+findContentLength = find (isInfixOf "Content-Length")
+	
+parseContentLength :: Maybe String -> [String]
+parseContentLength x =
+	map repl t
 	where
+		s = fromMaybe "0" x
 		w = words s
 		t = tail w
-		
-		
+		--n = 
+
+--setCL :: Request
+--setCL =
+--	Request (ContentLength (Just 110))
+
+--getContentLength :: String -> ContentLength
+--getContentLength s = 
+	--s:"t"
+	--map repl t
+	--where
+	--	w = words s
+	--	t = tail w
+
+repl :: String -> String
+repl "\\" = ""
+repl "r" = ""
+repl c = c
+
 handleGet :: String -> String
 handleGet line = addStatus returnCode body
 	where
