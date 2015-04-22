@@ -3,7 +3,7 @@
 import Network
 import System.IO
 import Data.List
---import Data.String
+--import Data.String.Utils
 
 -- defining our custom types. We derive from Show so that 
 -- we can use show on these types later!
@@ -59,13 +59,26 @@ handleConn handle = do
 	hFlush handle
 	hClose handle
 
-parseHeaders :: [String] -> Request
-parseHeaders request = do
-	w <- find (isInfixOf "Content-Length") request
-	return (Request (ContentLength (Just 123)))
+--parseHeaders :: [String] -> Request
+parseHeaders request = find (isInfixOf "Content-Length") request
+	--getContentLength cs
 
+setCL :: Request
+setCL =
+	Request (ContentLength (Just 110))
 
-
+--getContentLength :: String -> ContentLength
+getContentLength s = 
+	let 
+		repl "\\" = ""
+		repl "r" = ""
+		repl c = c
+	in map repl t
+	where
+		w = words s
+		t = tail w
+		
+		
 handleGet :: String -> String
 handleGet line = addStatus returnCode body
 	where
