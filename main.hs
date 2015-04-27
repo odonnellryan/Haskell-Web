@@ -67,9 +67,14 @@ handleConn handle = do
 findContentLength :: [String] -> Maybe String
 findContentLength = find (isInfixOf "Content-Length")
 	
-parseContentLength :: Maybe String -> [String]
+
+parseContentLength :: Maybe String -> String
 parseContentLength x =
-	map repl t
+	let 
+		repl "\\" = ""
+		repl "r" = ""
+		repl c = c
+	in head (map repl t)
 	where
 		s = fromMaybe "0" x
 		w = words s
@@ -88,10 +93,6 @@ parseContentLength x =
 	--	w = words s
 	--	t = tail w
 
-repl :: String -> String
-repl "\\" = ""
-repl "r" = ""
-repl c = c
 
 handleGet :: String -> String
 handleGet line = addStatus returnCode body
